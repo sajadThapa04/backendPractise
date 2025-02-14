@@ -5,7 +5,7 @@ import cookieParser from 'cookie-parser';
 const app = express();
 
 
-const limit = "100kb"
+const limit = "50kb"
 app.use(express.urlencoded({ extended: true }, { limit: `${limit}` }));
 app.use(express.json({ limit: `${limit}` }));
 app.use(express.static('public'));

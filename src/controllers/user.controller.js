@@ -227,7 +227,7 @@ const updateCurrentUser = asyncHandler(async (req, res) => {
     throw new ApiError(401, "All fields are required");
   }
 
-  const user = User.findByIdAndUpdate(
+  const user = await User.findByIdAndUpdate(
     req.user
       ?._id, {
     $set: {
@@ -321,7 +321,11 @@ const getUserChannelProfile = asyncHandler(async (req, res) => {
   const { username } = req.params
 
   if (!username?.trim()) {
-    throw new ApiError(400, "No username found");
+    throw new ApiError(400, "please provide your username");
+  }
+  refreshAccessToken;
+  if (!refreshAccessToken) {
+    throw new ApiError(402, "please log in");
   }
 
   const channel = await User.aggregate([
@@ -360,7 +364,7 @@ const getUserChannelProfile = asyncHandler(async (req, res) => {
               in: [req.user?._id, "$subscribers.subscriber"]
             },
             then: true,
-            else: fasle
+            else: false
           }
         }
       }
