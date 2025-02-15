@@ -323,10 +323,7 @@ const getUserChannelProfile = asyncHandler(async (req, res) => {
   if (!username?.trim()) {
     throw new ApiError(400, "please provide your username");
   }
-  refreshAccessToken;
-  if (!refreshAccessToken) {
-    throw new ApiError(402, "please log in");
-  }
+
 
   const channel = await User.aggregate([
     {
