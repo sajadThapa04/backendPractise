@@ -22,9 +22,11 @@ app.use(cookieParser());
 import userRouter from "./routes/user.routes.js"
 import videoRouter from "./routes/video.routes.js";
 import subsRouter from "./routes/subscription.routes.js";
+import comRouter from "./routes/comment.routes.js";
 
 //router decleration
 app.use("/api/v1/users", userRouter);
 app.use("/api/v1/videos", videoRouter);
 app.use("/api/v1/subs", subsRouter);
+app.use("/api/v1/comment", comRouter);
 export { app };

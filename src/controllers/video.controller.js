@@ -18,6 +18,10 @@ const getAllVideos = asyncHandler(async (req, res) => {
 
     const filter = {} //  creating and empty filter obj
 
+    if (userId) {
+        filter.owner = new mongoose.Types.ObjectId(userId);
+    }
+
     if (query) {
         const regex = new RegExp(query, "i");
         filter.$or = [
@@ -26,9 +30,6 @@ const getAllVideos = asyncHandler(async (req, res) => {
         ]
     }
 
-    if (userId) {
-        filter.owner = new mongoose.Types.ObjectId(userId);
-    }
 
     const sortOptions = {}
     if (sortBy && ALLOWED_SORT_FIELDS.includes(sortBy)) {
@@ -46,6 +47,21 @@ const getAllVideos = asyncHandler(async (req, res) => {
         { $limit: limitNumber },
         {
             $lookup: {
+                from: "comments",
+                localField: "_id",
+                foreignField: "video",
+                as: "comments",
+                pipeline: [
+                    {
+                        $project: {
+                            content: 1
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            $lookup: {
                 from: "users",
                 localField: "owner",
                 foreignField: "_id",
@@ -61,14 +77,8 @@ const getAllVideos = asyncHandler(async (req, res) => {
                 ]
             }
         },
-        {
-            $addFields: {
-                owner: {
-                    $first: "$owner"
-                }
-            }
-        },
-
+        { $unwind: "$comments" },
+        { $unwind: "$owner" },
         {
             $project: {
                 videoFile: 1,
@@ -76,12 +86,10 @@ const getAllVideos = asyncHandler(async (req, res) => {
                 title: 1,
                 description: 1,
                 owner: 1,
-                duration: 1,
-                isPublished: 1,
-                views: 1
+                views: 1,
+                comments: 1
             }
         }
-
     ])
 
     if (!filterVideo.length) {
@@ -145,6 +153,7 @@ const getVideoById = asyncHandler(async (req, res) => {
 
     if (searchVideoById) {
         searchVideoById.views += 1
+        searchVideoById.save();
     } else {
         throw new ApiError(403, "no videos found");
     }
@@ -153,6 +162,21 @@ const getVideoById = asyncHandler(async (req, res) => {
         {
             $match: {
                 _id: new mongoose.Types.ObjectId(videoId)
+            }
+        },
+        {
+            $lookup: {
+                from: "comments",
+                localField: "_id",
+                foreignField: "video",
+                as: "comments",
+                pipeline: [
+                    {
+                        $project: {
+                            content: 1
+                        }
+                    }
+                ]
             }
         },
         {
@@ -172,14 +196,8 @@ const getVideoById = asyncHandler(async (req, res) => {
                 ]
             }
         },
-        //later we will join the likes and comments as well when we finish those controllers
-        {
-            $addFields: {
-                owner: {
-                    $first: "$owner"
-                }
-            }
-        },
+        { $unwind: "$comments" },
+        { $unwind: "$owner" },
         {
             $project: {
                 videoFile: 1,
@@ -188,6 +206,7 @@ const getVideoById = asyncHandler(async (req, res) => {
                 description: 1,
                 owner: 1,
                 views: 1,
+                comments: 1
             }
         }
     ])
@@ -195,8 +214,6 @@ const getVideoById = asyncHandler(async (req, res) => {
         throw new ApiError(403, "No videos found")
     }
     res.status(200).json(new ApiResponse(200, joinVideoToUsersLikesAndComments[0], "videos found successfully"));
-
-
 })
 
 const updateVideo = asyncHandler(async (req, res) => {
