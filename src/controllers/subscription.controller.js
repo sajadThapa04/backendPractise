@@ -71,7 +71,10 @@ const getUserChannelSubscribers = asyncHandler(async (req, res) => {
             }
         },
         {
-            $unwind: "$subscribers"
+            $unwind: {
+                path: "$subscribers",
+                preserveNullAndEmptyArrays: true // Keep videos without comments
+            }
         },
         {
             $project: {

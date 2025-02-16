@@ -1,6 +1,7 @@
 import mongoose, { isValidObjectId } from "mongoose"
 import { Video } from "../models/video.model.js"
 import { User } from "../models/user.model.js"
+import { Comment } from "../models/comment.model.js"
 import { ApiError } from "../utils/ApiError.js"
 import { ApiResponse } from "../utils/ApiResponse.js"
 import { asyncHandler } from "../utils/asyncHandler.js"
@@ -77,8 +78,13 @@ const getAllVideos = asyncHandler(async (req, res) => {
                 ]
             }
         },
-        { $unwind: "$comments" },
-        { $unwind: "$owner" },
+
+        {
+            $unwind: {
+                path: "$owner",
+                preserveNullAndEmptyArrays: true // Keep videos without comments
+            }
+        },
         {
             $project: {
                 videoFile: 1,
@@ -196,8 +202,13 @@ const getVideoById = asyncHandler(async (req, res) => {
                 ]
             }
         },
-        { $unwind: "$comments" },
-        { $unwind: "$owner" },
+
+        {
+            $unwind: {
+                path: "$owner",
+                preserveNullAndEmptyArrays: true // Keep videos without comments
+            }
+        },
         {
             $project: {
                 videoFile: 1,
@@ -281,13 +292,17 @@ const deleteVideo = asyncHandler(async (req, res) => {
 
     const deleteVideo = await Video.findByIdAndDelete(videoId)
 
+    await Comment.deleteMany({
+        video: videoId,
+        owner: req.user?._id
+    })
 
     if (!deleteVideo) {
         throw new ApiError(503, "Something went wrong while deleting video")
     }
 
 
-    res.status(200).json(200, deleteVideo, "Successfully deleted video");
+    res.status(200).json(new ApiResponse(200, deleteVideo, "Successfully deleted video"));
 })
 
 const togglePublishStatus = asyncHandler(async (req, res) => {
