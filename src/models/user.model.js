@@ -28,15 +28,15 @@ const userSchema = new Schema({
         type: String, // from cloudinary
         required: true
     },
-    avatar_public_id:{
-        type:String
+    avatar_public_id: {
+        type: String
     },
 
     coverImage: {
         type: String // from cloudinary
     },
-    coverImage_public_id:{
-        type:String
+    coverImage_public_id: {
+        type: String
     },
     watchHistory: [
         {
