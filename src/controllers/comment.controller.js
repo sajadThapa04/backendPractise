@@ -3,6 +3,7 @@ import { Comment } from "../models/comment.model.js"
 import { ApiError } from "../utils/ApiError.js"
 import { ApiResponse } from "../utils/ApiResponse.js"
 import { asyncHandler } from "../utils/asyncHandler.js"
+import { Video } from "../models/video.model.js"
 
 const getVideoComments = asyncHandler(async (req, res) => {
     //TODO: get all comments for a video
@@ -88,12 +89,13 @@ const addComment = asyncHandler(async (req, res) => {
         throw new ApiError(403, "Please add comment")
     }
     const { videoId } = req.params
-    if (!videoId) {
+    const videoComment = await Video.findById(videoId);
+    if (!videoComment) {
         throw new ApiError(403, "No video id found");
     }
 
     const addComment = await Comment.create({
-        content: content,
+        content,
         owner: req.user?._id,
         video: videoId
     })
@@ -117,7 +119,7 @@ const updateComment = asyncHandler(async (req, res) => {
 
     const comment = await Comment.findById(commentId);
 
-    if (comment.owner.toString() !== req.user?._id.toString()) {
+    if (comment?.owner.toString() !== req.user?._id.toString()) {
         throw new ApiError(403, "Not allowed to update other users comment");
     }
 
@@ -143,6 +145,11 @@ const deleteComment = asyncHandler(async (req, res) => {
     const { commentId } = req.params
     if (!commentId) {
         throw new ApiError(403, "No comment found")
+    }
+    const comment = await Comment.findById(commentId);
+
+    if (comment?.owner.toString() !== req.user?._id.toString()) {
+        throw new ApiError(403, "Not allowed to delete other users comment");
     }
 
     const deletedComment = await Comment.findByIdAndDelete(commentId)
