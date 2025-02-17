@@ -126,7 +126,10 @@ const getSubscribedChannels = asyncHandler(async (req, res) => {
         },
 
         {
-            $unwind: "$subscribedTo"
+            $unwind: {
+                path: "$subscribedTo",
+                preserveNullAndEmptyArrays: true // Keep videos without comments
+            }
         },
         {
             $project: {
@@ -146,7 +149,7 @@ const getSubscribedChannels = asyncHandler(async (req, res) => {
     if (!channelSubscibed.length) {
         throw new ApiError(403, "you have not subscribed to any channel")
     }
-    res.status(200).json(new ApiResponse(200, channelSubscibed[0], "subscribed channel got successfully"));
+    res.status(200).json(new ApiResponse(200, channelSubscibed, "subscribed channel got successfully"));
 })
 
 export {

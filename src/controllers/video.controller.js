@@ -102,7 +102,7 @@ const getAllVideos = asyncHandler(async (req, res) => {
         throw new ApiError(403, "No videos found")
     }
 
-    res.status(200).json(new ApiResponse(200, filterVideo[0], "videos found successfully"))
+    res.status(200).json(new ApiResponse(200, filterVideo, "videos found successfully"))
 })
 
 const publishAVideo = asyncHandler(async (req, res) => {

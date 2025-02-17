@@ -53,9 +53,6 @@ const getVideoComments = asyncHandler(async (req, res) => {
                 pipeline: [
                     {
                         $project: {
-                            videoFile: 1,
-                            thumbnail: 1,
-                            description: 1,
                             owner: 1,
                             views: 1,
                             isPublished: 1
@@ -78,7 +75,7 @@ const getVideoComments = asyncHandler(async (req, res) => {
     if (!videoComment.length) {
         throw new ApiError(404, "No comment found")
     }
-    res.status(200).json(new ApiResponse(200, videoComment[0], "comment got successfully"))
+    res.status(200).json(new ApiResponse(200, videoComment, "comment got successfully"))
 })
 
 const addComment = asyncHandler(async (req, res) => {
