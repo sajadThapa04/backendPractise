@@ -24,6 +24,9 @@ import videoRouter from "./routes/video.routes.js";
 import subsRouter from "./routes/subscription.routes.js";
 import comRouter from "./routes/comment.routes.js";
 import tweetRouter from "./routes/tweet.routes.js";
+import likeRouter from "./routes/like.routes.js";
+import playlist from "./routes/playlist.routes.js";
+
 
 
 //router decleration
@@ -32,5 +35,6 @@ app.use("/api/v1/videos", videoRouter);
 app.use("/api/v1/subs", subsRouter);
 app.use("/api/v1/comment", comRouter);
 app.use("/api/v1/tweets", tweetRouter);
-
+app.use("/api/v1/likes", likeRouter);
+app.use("/api/v1/playlist", playlist);
 export { app };

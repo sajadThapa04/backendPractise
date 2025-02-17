@@ -6,6 +6,7 @@ import { ApiError } from "../utils/ApiError.js"
 import { ApiResponse } from "../utils/ApiResponse.js"
 import { asyncHandler } from "../utils/asyncHandler.js"
 import { uploadOnCloudinary } from "../utils/cloudinary.js"
+import { Like } from "../models/like.model.js"
 
 
 const getAllVideos = asyncHandler(async (req, res) => {
@@ -48,6 +49,21 @@ const getAllVideos = asyncHandler(async (req, res) => {
         { $limit: limitNumber },
         {
             $lookup: {
+                from: "likes",
+                localField: "_id",
+                foreignField: "video",
+                as: "likedVideos"
+            }
+        },
+        {
+            $addFields: {
+                totalVideoLikes: {
+                    $size: "$likedVideos"
+                }
+            }
+        },
+        {
+            $lookup: {
                 from: "comments",
                 localField: "_id",
                 foreignField: "video",
@@ -59,6 +75,13 @@ const getAllVideos = asyncHandler(async (req, res) => {
                         }
                     }
                 ]
+            }
+        },
+        {
+            $addFields: {
+                totalComments: {
+                    $size: "$comments"
+                }
             }
         },
         {
@@ -93,7 +116,9 @@ const getAllVideos = asyncHandler(async (req, res) => {
                 description: 1,
                 owner: 1,
                 views: 1,
-                comments: 1
+                comments: 1,
+                totalVideoLikes: 1,
+                totalComments: 1
             }
         }
     ])
@@ -164,63 +189,89 @@ const getVideoById = asyncHandler(async (req, res) => {
         throw new ApiError(403, "no videos found");
     }
 
-    const joinVideoToUsersLikesAndComments = await Video.aggregate([
-        {
-            $match: {
-                _id: new mongoose.Types.ObjectId(videoId)
-            }
-        },
-        {
-            $lookup: {
-                from: "comments",
-                localField: "_id",
-                foreignField: "video",
-                as: "comments",
-                pipeline: [
-                    {
-                        $project: {
-                            content: 1
-                        }
+    const joinVideoToUsersLikesAndComments = await Video.aggregate(
+        [
+            {
+                $match: {
+                    _id: new mongoose.Types.ObjectId(videoId)
+                }
+            },
+            {
+                $lookup: {
+                    from: "likes",
+                    localField: "_id",
+                    foreignField: "video",
+                    as: "likedVideos"
+                }
+            },
+            {
+                $addFields: {
+                    totalVideoLikes: {
+                        $size: "$likedVideos"
                     }
-                ]
-            }
-        },
-        {
-            $lookup: {
-                from: "users",
-                localField: "owner",
-                foreignField: "_id",
-                as: "owner",
-                pipeline: [
-                    {
-                        $project: {
-                            username: 1,
-                            fullname: 1,
-                            avatar: 1
+                }
+            },
+            {
+                $lookup: {
+                    from: "comments",
+                    localField: "_id",
+                    foreignField: "video",
+                    as: "comments",
+                    pipeline: [
+                        {
+                            $project: {
+                                content: 1
+                            }
                         }
+                    ]
+                }
+            },
+            {
+                $addFields: {
+                    totalComments: {
+                        $size: "$comments"
                     }
-                ]
-            }
-        },
+                }
+            },
+            {
+                $lookup: {
+                    from: "users",
+                    localField: "owner",
+                    foreignField: "_id",
+                    as: "owner",
+                    pipeline: [
+                        {
+                            $project: {
+                                username: 1,
+                                fullname: 1,
+                                avatar: 1
+                            }
+                        }
+                    ]
+                }
+            },
 
-        {
-            $unwind: {
-                path: "$owner",
-                preserveNullAndEmptyArrays: true // Keep videos without comments
+            {
+                $unwind: {
+                    path: "$owner",
+                    preserveNullAndEmptyArrays: true // Keep videos without comments
+                }
+            },
+            {
+                $project: {
+                    videoFile: 1,
+                    thumbnail: 1,
+                    title: 1,
+                    description: 1,
+                    owner: 1,
+                    views: 1,
+                    comments: 1,
+                    totalVideoLikes: 1,
+                    totalComments: 1
+                }
             }
-        },
-        {
-            $project: {
-                videoFile: 1,
-                thumbnail: 1,
-                title: 1,
-                description: 1,
-                owner: 1,
-                views: 1,
-                comments: 1
-            }
-        }
-    ])
+        ]
+    )
     if (!joinVideoToUsersLikesAndComments?.length) {
         throw new ApiError(403, "No videos found")
     }
@@ -292,10 +343,17 @@ const deleteVideo = asyncHandler(async (req, res) => {
 
     const deleteVideo = await Video.findByIdAndDelete(videoId)
 
+    const user = req.user?._id
     await Comment.deleteMany({
         video: videoId,
-        owner: req.user?._id
+        owner: user
     })
+
+    await Like.deleteMany({
+        video: videoId,
+        likedBy: user
+    })
+
 
     if (!deleteVideo) {
         throw new ApiError(503, "Something went wrong while deleting video")
