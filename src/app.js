@@ -26,7 +26,7 @@ import comRouter from "./routes/comment.routes.js";
 import tweetRouter from "./routes/tweet.routes.js";
 import likeRouter from "./routes/like.routes.js";
 import playlist from "./routes/playlist.routes.js";
-
+import dashboard from "./routes/dashboard.routes.js"
 
 
 //router decleration
@@ -37,4 +37,5 @@ app.use("/api/v1/comment", comRouter);
 app.use("/api/v1/tweets", tweetRouter);
 app.use("/api/v1/likes", likeRouter);
 app.use("/api/v1/playlist", playlist);
+app.use("/api/v1/dashboard", dashboard);
 export { app };
